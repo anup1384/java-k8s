@@ -1,9 +1,5 @@
 # Java and Kubernetes
 
-Show how you can move your spring boot application to docker and kubernetes.
-This project is a demo for the series of posts on dev.to
-https://dev.to/sandrogiacom/kubernetes-for-java-developers-setup-41nk
-
 ## Part one - base app:
 
 ### Requirements:
@@ -16,7 +12,7 @@ Spring boot and mysql database running on docker
 
 **Clone from repository**
 ```bash
-git clone https://github.com/sandrogiacom/java-kubernetes.git
+git clone https://github.com/anup1384/java-k8s.git
 ```
 
 **Build application**
@@ -24,51 +20,16 @@ git clone https://github.com/sandrogiacom/java-kubernetes.git
 mvn clean install
 ```
 
-**Start the database**
-```bash
-make run:db
-```
-
-**Run application**
-```bash
-java -jar target/java-kubernetes.jar
-```
-
-**Check**
-http://localhost:8080/persons
-
-
 ## Part two - app on Docker:
 
 Create a Dockerfile:
 
 ```yaml
 FROM openjdk:11.0.3-jdk-slim
-RUN mkdir /usr/myapp
-COPY target/java-kubernetes-0.0.1-SNAPSHOT.jar /usr/myapp/app.jar
-WORKDIR /usr/myapp
+COPY target/*.jar /var/www/app.jar
 EXPOSE 8080
-ENTRYPOINT [ "sh", "-c", "java $JAVA_OPTS -jar app.jar" ]
+ENTRYPOINT [ "sh", "-c", "java $JAVA_OPTS -jar /var/www/app.jar" ]
 ```
-
-**Build application and docker image**
-
-```bash
-make build
-```
-
-Create and run the database
-```bash
-make run-db
-```
-
-Create and run the application
-```bash
-make run-app
-```
-
-**Check**
-http://localhost:8080/persons
 
 ## Part three - app on Kubernetes:
 
@@ -78,52 +39,45 @@ Now, we deploy application in a kunernetes cluster running in our machine
 Prepare
 
 ### Start minikube
-`make k-setup` start minikube, enable ingress and create namespace dev-to
+`minikube start`
 
 ### Deploy database
 
-`make k-deploy-db` create mysql deployment and service
+`kubectl apply -f k8s/mysql/` create mysql deployment and service
 
-`kubectl get pods -n dev-to`
+`kubectl get pods`
 
-`kubectl port-forward -n dev-to <pod_name> 3306:3306`
+`kubectl port-forward  <pod_name> 3306:3306`
 
-## Build application and deploy
+## Deploy application
 
-`make k-build-app` build app
+`kubectl apply -f k8s/app` create app deployment and service
 
-`make k-build-image` create docker image inside minikube machine
-
-`make k-deploy-app` create app deployment and service
-
-## Map dev.local
-
-Edit `hosts` 
 
 ## Check pods
 
-`kubectl get pods -n dev-to`
+`kubectl get pods `
 
 Delete pod
-`kubectl delete pod -n dev-to myapp-f6774f497-82w4r`
+`kubectl delete pod -n myapp-f7974h497-82k4r`
 
 Replicas
-`kubectl get rs -n dev-to`
+`kubectl get rs`
 
 Scale
-`kubectl -n dev-to scale deployment/myapp --replicas=2`
+`kubectl scale deployment/myapp --replicas=2`
 
 View replicas
 `
 while true
-do curl "http://dev.local/hello"
+do curl "http://minikubeip/hello"
 echo
 sleep 2
 done
 `
 
 ## Check app url
-`minikube -p dev.to service -n dev-to myapp --url`
+`minikube service  myapp --url`
 
 Change your IP and PORT as you need it
 
@@ -132,25 +86,3 @@ Change your IP and PORT as you need it
 Add new Person
 `curl -X POST http://192.168.99.100:31838/persons -H "Content-Type: application/json" -d '{"name": "New Person", "birthDate": "2000-10-01"}'`
 
-## Minikube dashboard
-
-`minikube -p dev.to dashboard`
-
-## Part four - debug app:
-
-add   JAVA_OPTS: "-agentlib:jdwp=transport=dt_socket,address=*:5005,server=y,suspend=n -Xms256m -Xmx512m -XX:MaxMetaspaceSize=128m"
-change CMD to ENTRYPOINT on Dockerfile
-
-`kubectl get pods -n=dev-to`
-
-`kubectl port-forward -n=dev-to <pod_name> 5005:5005`
-
-## Start all
-
-`make k:all`
-
-## Restart virtualbox ip
-
-`rm  ~/.config/VirtualBox/HostInterfaceNetworking-vboxnet0-Dhcpd.leases`
-`rm  ~/.config/VirtualBox/HostInterfaceNetworking-vboxnet0-Dhcpd.leases-prev`
-# java application deployment on k8s
