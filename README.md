@@ -4,7 +4,7 @@
 
 ### Requirements:
 
-**Docker and Make**
+**Docker and k8s**
 
 ### Build and run application:
 
